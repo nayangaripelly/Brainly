@@ -13,8 +13,9 @@ const contentSchema = new schema({
     title : {type: String, required: true},
     type: {type:String, enum: contentTypes, required:true},
     link :{type: String,required: true},
-    tags: [{type: objectId , ref: "tagSchema"}],
-    userId: {type:objectId, ref:"userSchema",required: true}
+    // tags: [{type: objectId , ref: "tags"}], // refs should relate to model names not schema names
+    tags: [String],
+    userId: {type:objectId, ref:"users",required: true}
 })
 
 
@@ -27,8 +28,8 @@ const linkSchema = new schema({
     link : {type: String, required: true}
 })
 
-export const UserModel = mongoose.model("user",userSchema);
-export const ContentModel = mongoose.model("content",contentSchema);
-export const TagModel = mongoose.model("tag",tagSchema);
-export const LinkModel = mongoose.model("link",linkSchema);
+export const UserModel = mongoose.model("users",userSchema);
+export const ContentModel = mongoose.model("contents",contentSchema);
+export const TagModel = mongoose.model("tags",tagSchema);
+export const LinkModel = mongoose.model("links",linkSchema);
 
