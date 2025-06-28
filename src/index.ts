@@ -2,8 +2,9 @@ import express from "express";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import crypto from "crypto"; // new lib used for hashing
 
-import {UserModel, ContentModel} from "./db"
+import {UserModel, ContentModel, LinkModel} from "./db"
 dotenv.config();
 
 import { userAuth } from "./middleware";
@@ -125,14 +126,65 @@ app.delete("/api/v1/content",async function(req:customReq, res)
     }
 })
 
-app.post("/api/v1/brain/share", function(req, res)
+app.post("/api/v1/brain/share", async function (req:customReq, res) { 
+
+  const share = req.body.share;
+  const id = req.id;
+
+  if (!share || !id) {
+    res.status(400).json({ msg: "Missing share flag or user ID" });
+    return;
+  }
+
+  const hash = crypto.randomBytes(8).toString("hex");
+
+  await LinkModel.findOneAndUpdate(
+    { userId: id },
+    { hash, userId: id },
+    { upsert: true, new: true }
+  );
+
+  res.status(200).json({
+    link: `/api/v1/brain/${hash}`
+  });
+});
+
+
+
+app.get("/api/v1/brain/:shareLink",async function(req, res)
 {
+    const hash = req.params.shareLink;
+    try {
+        const user = await LinkModel.findOne({
+            hash
+        })
 
-})
+        if(!user)
+        {
+            res.status(404).json({
+                msg:"hash is invalid"
+            })
+        }
+        const id = user?.userId;
 
-app.get("/api/v1/brain/:shareLink",function(req, res)
-{
+        const content = await ContentModel.find({
+            userId: id
+        })
 
+        const shared = await UserModel.findOne({
+            _id:id
+        })
+
+        res.status(200).json({
+            email: shared?.email,
+            content
+        })
+    }catch(e)
+    {
+        res.status(500).json({
+            msg:"something went wrong"
+        })
+    }
 })
 
 async function main()
