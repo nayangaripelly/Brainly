@@ -131,22 +131,44 @@ app.post("/api/v1/brain/share", async function (req:customReq, res) {
   const share = req.body.share;
   const id = req.id;
 
-  if (!share || !id) {
-    res.status(400).json({ msg: "Missing share flag or user ID" });
+  if (!id) {
+    res.status(400).json({ msg: "You are not logged in.." });
     return;
   }
 
-  const hash = crypto.randomBytes(8).toString("hex");
+  if(share)
+  {
+    const linkExists = await LinkModel.findOne({
+        userId:id
+    }) 
+    if(linkExists)
+    {
+        res.status(200).json({
+            msg:"link already exists..",
+            link: "/api/v1/brain/" + linkExists.hash
+        })
+        return; 
+    }
+    const hash = crypto.randomBytes(8).toString("hex");
 
-  await LinkModel.findOneAndUpdate(
-    { userId: id },
-    { hash, userId: id },
-    { upsert: true, new: true }
-  );
+    await LinkModel.create({
+        userId: id,
+        hash
+    })
 
-  res.status(200).json({
-    link: `/api/v1/brain/${hash}`
-  });
+    res.status(200).json({
+        link: `/api/v1/brain/${hash}`
+    });
+  }else
+  {
+    await LinkModel.deleteOne({
+        userId:id
+    })
+
+    res.status(200).json({
+        msg:"Stopped Sharing the brain"
+    })
+  }
 });
 
 
